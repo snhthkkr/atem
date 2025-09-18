@@ -363,64 +363,113 @@ function App() {
     [state.thoughts, activeThoughtId]
   );
 
+  // Get current branch name for version display
+  const getVersionName = () => {
+    // Check if we're on experimental branch (this is a simple check)
+    const isExperimental = window.location.href.includes('experimental') || 
+                          document.title.includes('experimental') ||
+                          localStorage.getItem('atem.branch') === 'experimental';
+    
+    if (isExperimental) {
+      return "🧪 Experimental Visual";
+    }
+    return "🛡️ MasterDoc";
+  };
+
   return (
     <div ref={wrapperRef} className="board-wrapper">
       <div className="control-bar">
-        <button onClick={() => setZoom((z) => Math.max(0.4, parseFloat((z - 0.1).toFixed(2))))}>−</button>
-        <span className="zoom-label">{Math.round(zoom * 100)}%</span>
-        <button onClick={() => setZoom((z) => Math.min(2, parseFloat((z + 0.1).toFixed(2))))}>+</button>
-        <button onClick={() => setZoom(1)}>Reset</button>
-        <button onClick={() => activeThought && deleteThought(activeThought.id)} disabled={!activeThought}>Delete</button>
-        <button onClick={() => activeThought && deleteAllConnections(activeThought.id)} disabled={!activeThought || getConnectionCount(activeThought.id) === 0}>Delete Links</button>
-        <button onClick={undo} disabled={state.cursor === 0}>Undo</button>
-        <button onClick={redo} disabled={state.cursor >= state.events.length}>Redo</button>
-        <button onClick={() => setShowSearch(!showSearch)}>Search</button>
-        <button onClick={exportThoughts}>Export</button>
-        <label className="import-label">
-          Import
-          <input
-            type="file"
-            accept="application/json"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importThoughts(f);
-              e.currentTarget.value = "";
-            }}
-          />
-        </label>
-        {/* Tiny test button to validate append-only events quickly */}
-        <button onClick={() => {
-          const id = (crypto as any).randomUUID();
-          dispatch({ type: "createThought", id, x: 200, y: 200, text: "Test" });
-        }}>QuickTest</button>
-        <span>Links: {state.links.length} | {linkingFrom ? 'LINKING MODE' : 'Click thought to link'}</span>
-        <button onClick={() => {
-          console.log('=== STATE DEBUG ===');
-          console.log('Thoughts count:', state.thoughts.length);
-          console.log('Thought IDs:', state.thoughts.map(t => t.id));
-          console.log('Duplicate IDs:', state.thoughts.map(t => t.id).filter((id, index, arr) => arr.indexOf(id) !== index));
-          console.log('Events count:', state.events.length);
-          console.log('Links count:', state.links.length);
-          console.log('==================');
-        }}>Debug State</button>
-        <button onClick={() => {
-          // Clear all corrupted state
-          localStorage.clear();
-          window.location.reload();
-        }}>Reset Everything</button>
-        <button onClick={() => {
-          // Clean current state - remove duplicates
-          const uniqueThoughts = state.thoughts.filter((thought, index, arr) => 
-            arr.findIndex(t => t.id === thought.id) === index
-          );
-          const uniqueLinks = state.links.filter((link, index, arr) => 
-            arr.findIndex(l => l.id === link.id) === index
-          );
-          console.log('Cleaned thoughts:', uniqueThoughts.length, 'from', state.thoughts.length);
-          console.log('Cleaned links:', uniqueLinks.length, 'from', state.links.length);
-          // Force re-render by updating state
-          dispatch({ type: "__reset__", payload: uniqueThoughts });
-        }}>Clean State</button>
+        {/* Version Display */}
+        <div className="version-display">
+          <span className="version-name">{getVersionName()}</span>
+          <span className="version-stats">{state.thoughts.length} thoughts • {state.links.length} connections</span>
+        </div>
+
+        {/* Core Controls */}
+        <div className="core-controls">
+          <button onClick={() => setZoom((z) => Math.max(0.4, parseFloat((z - 0.1).toFixed(2))))}>−</button>
+          <span className="zoom-label">{Math.round(zoom * 100)}%</span>
+          <button onClick={() => setZoom((z) => Math.min(2, parseFloat((z + 0.1).toFixed(2))))}>+</button>
+          <button onClick={() => setZoom(1)}>Reset</button>
+        </div>
+
+        {/* Thought Actions */}
+        <div className="thought-actions">
+          <button onClick={() => activeThought && deleteThought(activeThought.id)} disabled={!activeThought}>
+            🗑️ Delete
+          </button>
+          <button onClick={() => activeThought && deleteAllConnections(activeThought.id)} disabled={!activeThought || getConnectionCount(activeThought.id) === 0}>
+            🔗 Delete Links
+          </button>
+        </div>
+
+        {/* History Controls */}
+        <div className="history-controls">
+          <button onClick={undo} disabled={state.cursor === 0}>↶ Undo</button>
+          <button onClick={redo} disabled={state.cursor >= state.events.length}>↷ Redo</button>
+        </div>
+
+        {/* Search & Data */}
+        <div className="data-controls">
+          <button onClick={() => setShowSearch(!showSearch)}>🔍 Search</button>
+          <button onClick={exportThoughts}>📤 Export</button>
+          <label className="import-label">
+            📥 Import
+            <input
+              type="file"
+              accept="application/json"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) importThoughts(f);
+                e.currentTarget.value = "";
+              }}
+            />
+          </label>
+        </div>
+
+        {/* Linking Status */}
+        <div className="linking-status">
+          {linkingFrom ? (
+            <span className="linking-active">🔗 LINKING MODE - Click another thought</span>
+          ) : (
+            <span className="linking-ready">Click thought to start linking</span>
+          )}
+        </div>
+
+        {/* Developer Tools (collapsible) */}
+        <details className="dev-tools">
+          <summary>🛠️ Dev Tools</summary>
+          <div className="dev-buttons">
+            <button onClick={() => {
+              console.log('=== STATE DEBUG ===');
+              console.log('Thoughts count:', state.thoughts.length);
+              console.log('Thought IDs:', state.thoughts.map(t => t.id));
+              console.log('Duplicate IDs:', state.thoughts.map(t => t.id).filter((id, index, arr) => arr.indexOf(id) !== index));
+              console.log('Events count:', state.events.length);
+              console.log('Links count:', state.links.length);
+              console.log('==================');
+            }}>Debug State</button>
+            <button onClick={() => {
+              localStorage.clear();
+              window.location.reload();
+            }}>Reset Everything</button>
+            <button onClick={() => {
+              const uniqueThoughts = state.thoughts.filter((thought, index, arr) => 
+                arr.findIndex(t => t.id === thought.id) === index
+              );
+              const uniqueLinks = state.links.filter((link, index, arr) => 
+                arr.findIndex(l => l.id === link.id) === index
+              );
+              console.log('Cleaned thoughts:', uniqueThoughts.length, 'from', state.thoughts.length);
+              console.log('Cleaned links:', uniqueLinks.length, 'from', state.links.length);
+              dispatch({ type: "__reset__", payload: uniqueThoughts });
+            }}>Clean State</button>
+            <button onClick={() => {
+              const id = (crypto as any).randomUUID();
+              dispatch({ type: "createThought", id, x: 200, y: 200, text: "Test" });
+            }}>Quick Test</button>
+          </div>
+        </details>
       </div>
       
       {/* Search Interface */}
