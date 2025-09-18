@@ -1,0 +1,102 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  overflow: hidden;
+}
+
+.board-wrapper {
+  width: 100vw;
+  height: 100vh;
+  overflow: scroll;
+}
+
+.control-bar {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 1000;
+}
+
+.control-bar button {
+  padding: 4px 8px;
+}
+
+.zoom-label {
+  min-width: 44px;
+  text-align: center;
+}
+
+.import-label {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.import-label input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.board {
+  background: #fdfdfd;
+  position: relative;
+  touch-action: manipulation;
+  transition: opacity 0.3s ease;
+}
+
+/* Simple linking feedback - 1980s style */
+.thought.linking {
+  border: 4px solid black;
+}
+
+.thought {
+  position: absolute;
+  width: 250px;
+  background: white;
+  border: 1px solid black;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  cursor: move;
+  user-select: none;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.thought textarea {
+  width: 100%;
+  height: auto;
+  font-size: 14px;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+}
+
+.thought.focused {
+  transform: scale(1.05);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: #000;
+  background: #fffefc;
+}
+
+/* Pulse animation for connection preview */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
