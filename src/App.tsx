@@ -8,6 +8,11 @@ interface Thought {
   x: number;
   y: number;
   lastTouched: number;
+  createdAt: number;
+  updatedAt: number;
+  version: number; // Track how many times it's been edited
+  wordCount?: number; // Auto-calculated
+  characterCount?: number; // Auto-calculated
 }
 
 interface Link {
@@ -44,18 +49,37 @@ function reduceThoughts(prev: Thought[], event: DomainEvent): Thought[] {
         return prev;
       }
       const now = event.at ?? Date.now();
+      const text = event.text ?? "";
       const newThought: Thought = {
         id: event.id,
-        text: event.text ?? "",
+        text: text,
         x: event.x,
         y: event.y,
         lastTouched: now,
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+        wordCount: text.trim().split(/\s+/).filter(word => word.length > 0).length,
+        characterCount: text.length,
       };
       return [...prev, newThought];
     }
     case "updateText": {
       const now = event.at ?? Date.now();
-      return prev.map((t) => (t.id === event.id ? { ...t, text: event.text, lastTouched: now } : t));
+      return prev.map((t) => {
+        if (t.id === event.id) {
+          return {
+            ...t,
+            text: event.text,
+            lastTouched: now,
+            updatedAt: now,
+            version: t.version + 1,
+            wordCount: event.text.trim().split(/\s+/).filter(word => word.length > 0).length,
+            characterCount: event.text.length,
+          };
+        }
+        return t;
+      });
     }
     case "moveThought": {
       const now = event.at ?? Date.now();
@@ -142,6 +166,7 @@ function App() {
   const [linkingFrom, setLinkingFrom] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [showMetadata, setShowMetadata] = useState<boolean>(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const boardSize = { width: 3000, height: 3000 };
   const [zoom, setZoom] = useState<number>(1);
@@ -282,7 +307,7 @@ function App() {
         if (e.shiftKey) {
           redo();
         } else {
-          undo();
+        undo();
         }
       }
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -387,10 +412,10 @@ function App() {
 
         {/* Core Controls */}
         <div className="core-controls">
-          <button onClick={() => setZoom((z) => Math.max(0.4, parseFloat((z - 0.1).toFixed(2))))}>−</button>
-          <span className="zoom-label">{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom((z) => Math.min(2, parseFloat((z + 0.1).toFixed(2))))}>+</button>
-          <button onClick={() => setZoom(1)}>Reset</button>
+        <button onClick={() => setZoom((z) => Math.max(0.4, parseFloat((z - 0.1).toFixed(2))))}>−</button>
+        <span className="zoom-label">{Math.round(zoom * 100)}%</span>
+        <button onClick={() => setZoom((z) => Math.min(2, parseFloat((z + 0.1).toFixed(2))))}>+</button>
+        <button onClick={() => setZoom(1)}>Reset</button>
         </div>
 
         {/* Thought Actions */}
@@ -412,20 +437,23 @@ function App() {
         {/* Search & Data */}
         <div className="data-controls">
           <button onClick={() => setShowSearch(!showSearch)}>🔍 Search</button>
+          <button onClick={() => setShowMetadata(!showMetadata)} className={showMetadata ? "active" : ""}>
+            📊 {showMetadata ? "Hide" : "Show"} Metadata
+          </button>
           <button onClick={exportThoughts}>📤 Export</button>
-          <label className="import-label">
+        <label className="import-label">
             📥 Import
-            <input
-              type="file"
-              accept="application/json"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) importThoughts(f);
-                e.currentTarget.value = "";
-              }}
-            />
-          </label>
-        </div>
+          <input
+            type="file"
+            accept="application/json"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importThoughts(f);
+              e.currentTarget.value = "";
+            }}
+          />
+        </label>
+      </div>
 
         {/* Linking Status */}
         <div className="linking-status">
@@ -566,19 +594,20 @@ function App() {
         
 
         {state.thoughts.map((thought) => (
-          <DraggableThought
-            key={thought.id}
-            thought={thought}
-            onTextChange={(text) => updateText(thought.id, text)}
-            onDragEnd={(x, y) => updatePosition(thought.id, x, y)}
-            onFocus={() => setActiveThoughtId(thought.id)}
-            onLinkClick={() => handleLinkClick(thought.id)}
-            isActive={thought.id === activeThoughtId}
-            isLinking={linkingFrom === thought.id}
-            connectionCount={getConnectionCount(thought.id)}
-            zoom={zoom}
-          />
-        ))}
+            <DraggableThought
+              key={thought.id}
+              thought={thought}
+              onTextChange={(text) => updateText(thought.id, text)}
+              onDragEnd={(x, y) => updatePosition(thought.id, x, y)}
+              onFocus={() => setActiveThoughtId(thought.id)}
+              onLinkClick={() => handleLinkClick(thought.id)}
+              isActive={thought.id === activeThoughtId}
+              isLinking={linkingFrom === thought.id}
+              connectionCount={getConnectionCount(thought.id)}
+              zoom={zoom}
+              showMetadata={showMetadata}
+            />
+          ))}
       </div>
     </div>
   );
@@ -594,6 +623,7 @@ interface DraggableProps {
   isLinking: boolean;
   connectionCount: number;
   zoom: number;
+  showMetadata: boolean;
 }
 
 function DraggableThought({
@@ -606,6 +636,7 @@ function DraggableThought({
   isLinking,
   connectionCount,
   zoom,
+  showMetadata,
 }: DraggableProps) {
   const ref = useRef<HTMLDivElement>(null);
   const posRef = useRef({ x: thought.x, y: thought.y });
@@ -720,6 +751,29 @@ function DraggableThought({
           {connectionCount}
         </div>
       )}
+      
+      {/* Metadata overlay - shows on hover, when active, or when toggle is on */}
+      <div className="thought-metadata" style={{
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        background: 'rgba(0, 0, 0, 0.8)',
+        color: 'white',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        fontSize: '10px',
+        whiteSpace: 'nowrap',
+        zIndex: 15,
+        opacity: (isActive || showMetadata) ? 1 : 0,
+        transition: 'opacity 0.2s ease',
+        pointerEvents: 'none',
+      }}>
+        <div>Created: {new Date(thought.createdAt).toLocaleDateString()}</div>
+        {thought.updatedAt !== thought.createdAt && (
+          <div>Updated: {new Date(thought.updatedAt).toLocaleDateString()}</div>
+        )}
+        <div>v{thought.version} • {thought.wordCount} words • {thought.characterCount} chars</div>
+      </div>
     </div>
   );
 }
