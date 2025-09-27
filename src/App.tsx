@@ -167,6 +167,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
+  const [hasDragged, setHasDragged] = useState<boolean>(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const boardSize = { width: 3000, height: 3000 };
   const [zoom, setZoom] = useState<number>(1);
@@ -264,9 +265,16 @@ function App() {
       // Different thought = connect
       dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: linkingFrom, targetId: thoughtId });
       setLinkingFrom(null);
+      // Don't focus the target thought when completing connection
+      return;
     } else {
       // No linking = start
       setLinkingFrom(thoughtId);
+    }
+    
+    // Only focus if we're not in linking mode
+    if (!linkingFrom) {
+      setActiveThoughtId(thoughtId);
     }
   };
 
@@ -280,6 +288,12 @@ function App() {
   const handleBoardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only create new thoughts when clicking directly on the board (not on thoughts)
     if (e.target !== e.currentTarget) return;
+
+    // If we just finished dragging, don't create a new thought
+    if (hasDragged) {
+      setHasDragged(false);
+      return;
+    }
 
     // If linking, cancel it
     if (linkingFrom) {
@@ -606,6 +620,7 @@ function App() {
               connectionCount={getConnectionCount(thought.id)}
               zoom={zoom}
               showMetadata={showMetadata}
+              onDragStart={() => setHasDragged(true)}
             />
           ))}
       </div>
@@ -624,6 +639,7 @@ interface DraggableProps {
   connectionCount: number;
   zoom: number;
   showMetadata: boolean;
+  onDragStart: () => void;
 }
 
 function DraggableThought({
@@ -637,11 +653,13 @@ function DraggableThought({
   connectionCount,
   zoom,
   showMetadata,
+  onDragStart,
 }: DraggableProps) {
   const ref = useRef<HTMLDivElement>(null);
   const posRef = useRef({ x: thought.x, y: thought.y });
   const dragging = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -671,6 +689,7 @@ function DraggableThought({
     const startX = e.clientX;
     const startY = e.clientY;
     const startPos = { ...posRef.current };
+    dragStartPos.current = { x: startX, y: startY };
     const el = ref.current;
     el?.setPointerCapture(e.pointerId);
 
@@ -681,6 +700,14 @@ function DraggableThought({
       const dy = (ev.clientY - startY) / zoom;
       const newX = startPos.x + dx;
       const newY = startPos.y + dy;
+      
+      // Check if we've moved enough to consider it a drag (threshold of 5 pixels)
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance > 5 && dragStartPos.current) {
+        onDragStart(); // Notify parent that we're dragging
+        dragStartPos.current = null; // Prevent click after drag
+      }
+      
       if (ref.current) {
         ref.current.style.transform = `translate(${newX}px, ${newY}px)`;
         // Update state during dragging so lines follow
@@ -700,6 +727,11 @@ function DraggableThought({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
+      
+      // Reset drag start position after a short delay to allow click detection
+      setTimeout(() => {
+        dragStartPos.current = null;
+      }, 100);
     };
 
     window.addEventListener("pointermove", handlePointerMove, { passive: false });
@@ -714,6 +746,18 @@ function DraggableThought({
       onPointerDown={handlePointerDown}
       onClick={(e) => {
         e.stopPropagation();
+        
+        // If we just finished dragging, don't trigger connection mode
+        if (dragStartPos.current) {
+          return;
+        }
+        
+        // If clicking on textarea, don't trigger connection mode
+        if (e.target === textareaRef.current) {
+          return;
+        }
+        
+        // Only trigger connection mode for clicks on the thought container
         onLinkClick();
       }}
       data-thought-id={thought.id}
