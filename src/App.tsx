@@ -256,25 +256,21 @@ function App() {
   };
 
   const handleLinkClick = (thoughtId: string) => {
-    console.log('CLICK:', thoughtId, 'LINKING:', linkingFrom);
+    console.log('LINK CLICK:', thoughtId, 'LINKING FROM:', linkingFrom);
     
     if (linkingFrom === thoughtId) {
-      // Same thought = cancel
+      // Same thought = cancel linking mode
       setLinkingFrom(null);
+      setActiveThoughtId(thoughtId); // Focus the thought
     } else if (linkingFrom) {
-      // Different thought = connect
+      // Different thought = connect and exit linking mode
       dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: linkingFrom, targetId: thoughtId });
       setLinkingFrom(null);
       // Don't focus the target thought when completing connection
-      return;
     } else {
-      // No linking = start
+      // No linking = start linking mode
       setLinkingFrom(thoughtId);
-    }
-    
-    // Only focus if we're not in linking mode
-    if (!linkingFrom) {
-      setActiveThoughtId(thoughtId);
+      // Don't focus when starting linking mode
     }
   };
 
@@ -307,6 +303,7 @@ function App() {
       return;
     }
 
+    // Create new thought at click location
     const offset = getWrapperOffset();
     const x = (e.clientX + offset.x) / zoom;
     const y = (e.clientY + offset.y) / zoom;
@@ -659,7 +656,8 @@ function DraggableThought({
   const posRef = useRef({ x: thought.x, y: thought.y });
   const dragging = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const lastClickTime = useRef(0);
+  const clickCount = useRef(0);
 
   useEffect(() => {
     const el = ref.current;
@@ -684,54 +682,54 @@ function DraggableThought({
     // Only left button or touch/pen
     if (e.button !== 0 && e.pointerType === "mouse") return;
     
-    dragging.current = true;
+    dragging.current = false; // Start as false, only set true if we actually drag
     bringToFront();
     const startX = e.clientX;
     const startY = e.clientY;
     const startPos = { ...posRef.current };
-    dragStartPos.current = { x: startX, y: startY };
     const el = ref.current;
     el?.setPointerCapture(e.pointerId);
 
     const handlePointerMove = (ev: PointerEvent) => {
-      if (!dragging.current) return;
-      ev.preventDefault();
-      const dx = (ev.clientX - startX) / zoom;
-      const dy = (ev.clientY - startY) / zoom;
-      const newX = startPos.x + dx;
-      const newY = startPos.y + dy;
-      
-      // Check if we've moved enough to consider it a drag (threshold of 5 pixels)
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 5 && dragStartPos.current) {
+      
+      // Only start dragging if we've moved more than 5 pixels
+      if (distance > 5 && !dragging.current) {
+        dragging.current = true;
         onDragStart(); // Notify parent that we're dragging
-        dragStartPos.current = null; // Prevent click after drag
       }
       
-      if (ref.current) {
-        ref.current.style.transform = `translate(${newX}px, ${newY}px)`;
-        // Update state during dragging so lines follow
-        onDragEnd(newX, newY);
+      if (dragging.current) {
+        ev.preventDefault();
+        const newX = startPos.x + dx / zoom;
+        const newY = startPos.y + dy / zoom;
+        
+        if (ref.current) {
+          ref.current.style.transform = `translate(${newX}px, ${newY}px)`;
+          // Update state during dragging so lines follow
+          onDragEnd(newX, newY);
+        }
       }
     };
 
     const handlePointerUp = (ev: PointerEvent) => {
-      if (!dragging.current) return;
+      const wasDragging = dragging.current;
       dragging.current = false;
-      const dx = (ev.clientX - startX) / zoom;
-      const dy = (ev.clientY - startY) / zoom;
-      posRef.current.x = startPos.x + dx;
-      posRef.current.y = startPos.y + dy;
-      onDragEnd(posRef.current.x, posRef.current.y);
+      
+      if (wasDragging) {
+        const dx = (ev.clientX - startX) / zoom;
+        const dy = (ev.clientY - startY) / zoom;
+        posRef.current.x = startPos.x + dx;
+        posRef.current.y = startPos.y + dy;
+        onDragEnd(posRef.current.x, posRef.current.y);
+      }
+      
       el?.releasePointerCapture(e.pointerId);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
-      
-      // Reset drag start position after a short delay to allow click detection
-      setTimeout(() => {
-        dragStartPos.current = null;
-      }, 100);
     };
 
     window.addEventListener("pointermove", handlePointerMove, { passive: false });
@@ -747,18 +745,41 @@ function DraggableThought({
       onClick={(e) => {
         e.stopPropagation();
         
-        // If we just finished dragging, don't trigger connection mode
-        if (dragStartPos.current) {
+        // If we just finished dragging, don't do anything
+        if (dragging.current) {
           return;
         }
         
-        // If clicking on textarea, don't trigger connection mode
+        // If clicking on textarea, just focus it (don't trigger connection mode)
         if (e.target === textareaRef.current) {
+          onFocus();
           return;
         }
         
-        // Only trigger connection mode for clicks on the thought container
-        onLinkClick();
+        // Handle double-click for connection mode
+        const now = Date.now();
+        const timeDiff = now - lastClickTime.current;
+        
+        if (timeDiff < 300) { // Double click within 300ms
+          clickCount.current = 2;
+        } else {
+          clickCount.current = 1;
+        }
+        
+        lastClickTime.current = now;
+        
+        // Use setTimeout to handle click timing properly
+        setTimeout(() => {
+          if (clickCount.current === 1) {
+            // Single click: focus the thought (enter edit mode)
+            onFocus();
+          } else if (clickCount.current === 2) {
+            // Double click: start connection mode
+            onLinkClick();
+          }
+          // Reset click count after handling
+          clickCount.current = 0;
+        }, 50);
       }}
       data-thought-id={thought.id}
     >
