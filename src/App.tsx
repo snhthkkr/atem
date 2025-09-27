@@ -168,6 +168,7 @@ function App() {
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
   const [hasDragged, setHasDragged] = useState<boolean>(false);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
   const boardSize = { width: 3000, height: 3000 };
   const [zoom, setZoom] = useState<number>(1);
@@ -194,6 +195,28 @@ function App() {
       wrapper.scrollTo({ left: centerX, top: centerY, behavior: "smooth" });
     }
   }, [activeThoughtId]);
+
+  // Track mouse position for connection line
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (linkingFrom) {
+        const wrapper = wrapperRef.current;
+        if (wrapper) {
+          const rect = wrapper.getBoundingClientRect();
+          const offset = { x: wrapper.scrollLeft, y: wrapper.scrollTop };
+          setMousePos({
+            x: (e.clientX - rect.left + offset.x) / zoom,
+            y: (e.clientY - rect.top + offset.y) / zoom
+          });
+        }
+      }
+    };
+
+    if (linkingFrom) {
+      window.addEventListener('mousemove', handleMouseMove);
+      return () => window.removeEventListener('mousemove', handleMouseMove);
+    }
+  }, [linkingFrom, zoom]);
 
   const addThoughtAt = (x: number, y: number) => {
     const id = (crypto as any).randomUUID();
@@ -258,19 +281,15 @@ function App() {
   const handleLinkClick = (thoughtId: string) => {
     console.log('LINK CLICK:', thoughtId, 'LINKING FROM:', linkingFrom);
     
-    if (linkingFrom === thoughtId) {
-      // Same thought = cancel linking mode
-      setLinkingFrom(null);
-      setActiveThoughtId(thoughtId); // Focus the thought
-    } else if (linkingFrom) {
-      // Different thought = connect and exit linking mode
-      dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: linkingFrom, targetId: thoughtId });
-      setLinkingFrom(null);
-      // Don't focus the target thought when completing connection
+    if (linkingFrom) {
+      // We're in linking mode - complete the connection
+      if (linkingFrom !== thoughtId) {
+        dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: linkingFrom, targetId: thoughtId });
+      }
+      setLinkingFrom(null); // Exit linking mode
     } else {
-      // No linking = start linking mode
+      // Start linking mode
       setLinkingFrom(thoughtId);
-      // Don't focus when starting linking mode
     }
   };
 
@@ -282,16 +301,16 @@ function App() {
   };
 
   const handleBoardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only create new thoughts when clicking directly on the board (not on thoughts)
+    // Only handle clicks directly on the board (not on thoughts)
     if (e.target !== e.currentTarget) return;
 
-    // If we just finished dragging, don't create a new thought
+    // If we just finished dragging, don't do anything
     if (hasDragged) {
       setHasDragged(false);
       return;
     }
 
-    // If linking, cancel it
+    // If linking, exit linking mode
     if (linkingFrom) {
       setLinkingFrom(null);
       return;
@@ -469,9 +488,9 @@ function App() {
         {/* Linking Status */}
         <div className="linking-status">
           {linkingFrom ? (
-            <span className="linking-active">🔗 LINKING MODE - Click another thought</span>
+            <span className="linking-active">🔗 LINKING MODE - Click another thought or empty space</span>
           ) : (
-            <span className="linking-ready">Click thought to start linking</span>
+            <span className="linking-ready">Double-click thought to start linking</span>
           )}
         </div>
 
@@ -603,6 +622,37 @@ function App() {
           );
         })}
         
+        {/* Cursor line during connection mode */}
+        {linkingFrom && (() => {
+          const sourceThought = state.thoughts.find(t => t.id === linkingFrom);
+          if (!sourceThought) return null;
+          
+          const startX = sourceThought.x + 125;
+          const startY = sourceThought.y + 25;
+          const endX = mousePos.x;
+          const endY = mousePos.y;
+          const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+          const angle = Math.atan2(endY - startY, endX - startX);
+          
+          return (
+            <div
+              style={{
+                position: 'absolute',
+                left: startX,
+                top: startY,
+                width: length,
+                height: 2,
+                background: 'rgba(255, 255, 255, 0.6)',
+                transformOrigin: '0 0',
+                transform: `rotate(${angle}rad)`,
+                zIndex: 2,
+                pointerEvents: 'none',
+                boxShadow: '0 0 6px rgba(0, 0, 0, 0.4)',
+                border: '1px dashed rgba(255, 255, 255, 0.8)',
+              }}
+            />
+          );
+        })()}
 
         {state.thoughts.map((thought) => (
             <DraggableThought
@@ -656,8 +706,6 @@ function DraggableThought({
   const posRef = useRef({ x: thought.x, y: thought.y });
   const dragging = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lastClickTime = useRef(0);
-  const clickCount = useRef(0);
 
   useEffect(() => {
     const el = ref.current;
@@ -750,36 +798,25 @@ function DraggableThought({
           return;
         }
         
-        // If clicking on textarea, just focus it (don't trigger connection mode)
+        // If clicking on textarea, just focus it
         if (e.target === textareaRef.current) {
           onFocus();
           return;
         }
         
-        // Handle double-click for connection mode
-        const now = Date.now();
-        const timeDiff = now - lastClickTime.current;
+        // Single click: focus the thought (enter edit mode)
+        onFocus();
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
         
-        if (timeDiff < 300) { // Double click within 300ms
-          clickCount.current = 2;
-        } else {
-          clickCount.current = 1;
+        // If we just finished dragging, don't do anything
+        if (dragging.current) {
+          return;
         }
         
-        lastClickTime.current = now;
-        
-        // Use setTimeout to handle click timing properly
-        setTimeout(() => {
-          if (clickCount.current === 1) {
-            // Single click: focus the thought (enter edit mode)
-            onFocus();
-          } else if (clickCount.current === 2) {
-            // Double click: start connection mode
-            onLinkClick();
-          }
-          // Reset click count after handling
-          clickCount.current = 0;
-        }, 50);
+        // Double click: start connection mode
+        onLinkClick();
       }}
       data-thought-id={thought.id}
     >
