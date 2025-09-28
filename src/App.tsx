@@ -164,6 +164,8 @@ function App() {
 
   const [activeThoughtId, setActiveThoughtId] = useState<string | null>(null);
   const [linkingFrom, setLinkingFrom] = useState<string | null>(null);
+  const [lastClickTime, setLastClickTime] = useState<number>(0);
+  const [lastClickThought, setLastClickThought] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
@@ -278,21 +280,32 @@ function App() {
     (dispatch as any)({ type: "__redo__" });
   };
 
-  const handleLinkClick = (thoughtId: string) => {
-    console.log('🔗 LINK CLICK:', thoughtId, 'LINKING FROM:', linkingFrom);
+  const handleThoughtClick = (thoughtId: string) => {
+    const now = Date.now();
+    const isDoubleClick = (now - lastClickTime < 300) && (lastClickThought === thoughtId);
+    
+    console.log('🖱️ Thought click:', thoughtId, 'isDoubleClick:', isDoubleClick, 'linkingFrom:', linkingFrom);
     
     if (linkingFrom) {
-      // We're in linking mode - complete the connection
+      // We're in connection mode - complete the connection
       if (linkingFrom !== thoughtId) {
         console.log('✅ Creating connection from', linkingFrom, 'to', thoughtId);
         dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: linkingFrom, targetId: thoughtId });
       }
-      setLinkingFrom(null); // Exit linking mode
-    } else {
-      // Start linking mode
+      setLinkingFrom(null); // Exit connection mode
+    } else if (isDoubleClick) {
+      // Double click - start connection mode
       console.log('🚀 Starting connection mode for', thoughtId);
       setLinkingFrom(thoughtId);
+    } else {
+      // Single click - edit mode
+      console.log('📝 Entering edit mode for', thoughtId);
+      setActiveThoughtId(thoughtId);
     }
+    
+    // Update click tracking
+    setLastClickTime(now);
+    setLastClickThought(thoughtId);
   };
 
   const getWrapperOffset = () => {
@@ -312,8 +325,9 @@ function App() {
       return;
     }
 
-    // If linking, exit linking mode
+    // If in connection mode, exit it
     if (linkingFrom) {
+      console.log('❌ Exiting connection mode - clicked empty space');
       setLinkingFrom(null);
       return;
     }
@@ -490,15 +504,35 @@ function App() {
         {/* Linking Status */}
         <div className="linking-status">
           {linkingFrom ? (
-            <span className="linking-active">🔗 LINKING MODE - Click another thought or empty space</span>
+            <span className="linking-active">🔗 CONNECTION MODE - Click any thought to connect, or empty space to cancel</span>
           ) : (
-            <span className="linking-ready">Double-click thought to start linking</span>
+            <span className="linking-ready">Click to edit • Double-click to connect</span>
           )}
         </div>
 
         {/* Developer Tools (collapsible) */}
         <details className="dev-tools">
           <summary>🛠️ Dev Tools</summary>
+          
+          {/* Clear Instructions */}
+          <div style={{ 
+            background: '#f8f9fa', 
+            padding: '12px', 
+            margin: '8px 0', 
+            borderRadius: '6px', 
+            border: '1px solid #dee2e6',
+            fontSize: '12px',
+            lineHeight: '1.4'
+          }}>
+            <strong>📋 INTERACTION GUIDE:</strong><br/>
+            • <strong>1 Click</strong> on thought → Edit mode<br/>
+            • <strong>2 Clicks</strong> on thought → Connection mode<br/>
+            • <strong>1 Click</strong> on another thought → Connect them<br/>
+            • <strong>Click empty space</strong> → Cancel connection<br/>
+            • <strong>Drag</strong> thought → Move it<br/>
+            • <strong>Click empty space</strong> → Create new thought
+          </div>
+          
           <div className="dev-buttons">
             <button onClick={() => {
               console.log('=== STATE DEBUG ===');
@@ -663,7 +697,7 @@ function App() {
               onTextChange={(text) => updateText(thought.id, text)}
               onDragEnd={(x, y) => updatePosition(thought.id, x, y)}
               onFocus={() => setActiveThoughtId(thought.id)}
-              onLinkClick={() => handleLinkClick(thought.id)}
+              onLinkClick={() => handleThoughtClick(thought.id)}
               isActive={thought.id === activeThoughtId}
               isLinking={linkingFrom === thought.id}
               connectionCount={getConnectionCount(thought.id)}
@@ -708,7 +742,6 @@ function DraggableThought({
   const posRef = useRef({ x: thought.x, y: thought.y });
   const dragging = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const doubleClickHandled = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -795,48 +828,13 @@ function DraggableThought({
       onPointerDown={handlePointerDown}
       onClick={(e) => {
         e.stopPropagation();
-        console.log('🖱️ Single click on thought:', thought.id);
         
         // If we just finished dragging, don't do anything
         if (dragging.current) {
-          console.log('❌ Ignoring click - was dragging');
           return;
         }
         
-        // If clicking on textarea, just focus it
-        if (e.target === textareaRef.current) {
-          console.log('📝 Clicking textarea - focusing');
-          onFocus();
-          return;
-        }
-        
-        // Check if double click was handled
-        if (doubleClickHandled.current) {
-          console.log('❌ Ignoring single click - double click was handled');
-          doubleClickHandled.current = false;
-          return;
-        }
-        
-        // Single click: focus the thought (enter edit mode)
-        console.log('✅ Single click - entering edit mode');
-        onFocus();
-      }}
-      onDoubleClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🖱️🖱️ Double click on thought:', thought.id);
-        
-        // If we just finished dragging, don't do anything
-        if (dragging.current) {
-          console.log('❌ Ignoring double click - was dragging');
-          return;
-        }
-        
-        // Mark that double click was handled
-        doubleClickHandled.current = true;
-        
-        // Double click: start connection mode
-        console.log('✅ Double click - starting connection mode');
+        // Handle click on thought (anywhere - text or border)
         onLinkClick();
       }}
       data-thought-id={thought.id}
