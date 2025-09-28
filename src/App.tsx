@@ -454,7 +454,7 @@ function App() {
   return (
     <div ref={wrapperRef} className="board-wrapper">
       {/* Minimal Control Bar */}
-      <div className="minimal-control-bar">
+      <div className={`minimal-control-bar ${currentMode === 'connect' ? 'connect-mode' : ''}`}>
         {/* Mode Controls */}
         <div className="mode-controls">
           <button 
@@ -497,7 +497,7 @@ function App() {
 
       {/* Dev Menu (Collapsible) */}
       {showDevMenu && (
-        <div className="dev-menu">
+        <div className={`dev-menu ${currentMode === 'connect' ? 'connect-mode' : ''}`}>
           <div className="dev-menu-header">
             <h3>🛠️ Dev Tools</h3>
             <button onClick={() => setShowDevMenu(false)}>✕</button>
@@ -610,14 +610,12 @@ function App() {
           top: '60px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: 'rgba(0, 0, 0, 0.9)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
+          background: 'white',
+          border: '2px solid black',
           borderRadius: '8px',
           padding: '10px',
           zIndex: 1001,
           minWidth: '300px',
-          color: 'white',
-          backdropFilter: 'blur(10px)'
         }}>
           <input
             type="text"
@@ -627,11 +625,9 @@ function App() {
             style={{
               width: '100%',
               padding: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
+              border: '1px solid #ccc',
               borderRadius: '4px',
               fontSize: '14px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: 'white'
             }}
             autoFocus
           />
@@ -678,11 +674,9 @@ function App() {
           const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
           const angle = Math.atan2(endY - startY, endX - startX);
           
-          // No lines in connect mode for true monochrome simplicity
-          if (currentMode === 'connect') return null;
-          
-          const lineColor = '#ffffff';
-          const shadowColor = 'rgba(0, 0, 0, 0.5)';
+          // Night mode lines in connect mode - white on black
+          const lineColor = currentMode === 'connect' ? '#ffffff' : '#ffffff';
+          const shadowColor = currentMode === 'connect' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.5)';
           
           return (
             <div

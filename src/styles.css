@@ -10,52 +10,73 @@ body {
   overflow: scroll;
 }
 
-/* Minimal Control Bar - Blends with canvas */
+/* Minimal Control Bar - Adapts to mode */
 .minimal-control-bar {
   position: fixed;
   top: 20px;
   left: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #333;
   border-radius: 8px;
   padding: 8px 12px;
   display: flex;
   gap: 12px;
   align-items: center;
   z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
-/* White icons on black background */
+/* Night mode for connect mode */
+.minimal-control-bar.connect-mode {
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
 .minimal-control-bar button {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid #333;
   border-radius: 4px;
   padding: 6px 10px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  color: white;
+  color: #333;
   transition: all 0.2s ease;
 }
 
+.minimal-control-bar.connect-mode button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
 .minimal-control-bar button:hover:not(:disabled) {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.minimal-control-bar.connect-mode button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.5);
 }
 
 .minimal-control-bar button.active {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: #4caf50;
+  border-color: #4caf50;
   color: white;
 }
 
 .minimal-control-bar .zoom-label {
-  color: white;
+  color: #333;
   font-size: 12px;
   font-weight: 500;
   padding: 0 8px;
+}
+
+.minimal-control-bar.connect-mode .zoom-label {
+  color: white;
 }
 
 .control-bar {
@@ -121,20 +142,27 @@ body {
   color: white;
 }
 
-/* Dev Menu - Blends with canvas */
+/* Dev Menu - Adapts to mode */
 .dev-menu {
   position: fixed;
   top: 80px;
   left: 20px;
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #333;
   border-radius: 8px;
   padding: 16px;
   z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   max-width: 300px;
   max-height: 400px;
   overflow-y: auto;
+}
+
+/* Night mode for connect mode */
+.dev-menu.connect-mode {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
 }
 
@@ -151,6 +179,10 @@ body {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
+  color: #333;
+}
+
+.dev-menu.connect-mode .dev-menu-header h3 {
   color: white;
 }
 
@@ -161,10 +193,18 @@ body {
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
+  color: #333;
+}
+
+.dev-menu.connect-mode .dev-menu-header button {
   color: white;
 }
 
 .dev-menu-header button:hover {
+  background: #f0f0f0;
+}
+
+.dev-menu.connect-mode .dev-menu-header button:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -178,9 +218,13 @@ body {
   margin: 0 0 8px 0;
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.dev-menu.connect-mode .dev-section h4 {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .dev-buttons {
@@ -191,17 +235,28 @@ body {
 
 .dev-buttons button {
   padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid #ddd;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  background: white;
   cursor: pointer;
   font-size: 11px;
   font-weight: 500;
-  color: white;
+  color: #333;
   /* Removed transition for fundamental simplicity */
 }
 
+.dev-menu.connect-mode .dev-buttons button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
 .dev-buttons button:hover:not(:disabled) {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.dev-menu.connect-mode .dev-buttons button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.5);
 }
@@ -213,6 +268,10 @@ body {
 
 .debug-info {
   font-size: 11px;
+  color: #666;
+}
+
+.dev-menu.connect-mode .debug-info {
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -225,38 +284,58 @@ body {
 
 .debug-stats span {
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f8f9fa;
   border-radius: 3px;
   font-family: monospace;
+  color: #333;
+}
+
+.dev-menu.connect-mode .debug-stats span {
+  background: rgba(255, 255, 255, 0.1);
   color: white;
 }
 
 .debug-action {
   padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
   border-radius: 4px;
   font-family: monospace;
   font-size: 10px;
+  color: #333;
+}
+
+.dev-menu.connect-mode .debug-action {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
 }
 
-/* Burger Menu Button - Blends with canvas */
+/* Burger Menu Button - Adapts to mode */
 .burger-menu {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid #333;
   border-radius: 4px;
   padding: 6px 10px;
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  color: white;
+  color: #333;
   /* Removed transition for fundamental simplicity */
 }
 
+.minimal-control-bar.connect-mode .burger-menu {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
 .burger-menu:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f0f0f0;
   transform: scale(1.05);
+}
+
+.minimal-control-bar.connect-mode .burger-menu:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Mode Debugger */
