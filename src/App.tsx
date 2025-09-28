@@ -694,7 +694,7 @@ function App() {
       )}
       
       <div
-        className="board"
+        className={`board ${currentMode === 'connect' ? 'connect-mode' : ''}`}
         style={{ width: boardSize.width, height: boardSize.height, transform: `scale(${zoom})`, transformOrigin: "0 0" }}
         onClick={handleBoardClick}
       >
@@ -712,6 +712,10 @@ function App() {
           const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
           const angle = Math.atan2(endY - startY, endX - startX);
           
+          // Monochrome lines in connect mode
+          const lineColor = currentMode === 'connect' ? '#000000' : '#ffffff';
+          const shadowColor = currentMode === 'connect' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+          
           return (
             <div
               key={link.id}
@@ -721,12 +725,12 @@ function App() {
                 top: startY,
                 width: length,
                 height: 2,
-                background: '#ffffff',
+                background: lineColor,
                 transformOrigin: '0 0',
                 transform: `rotate(${angle}rad)`,
                 zIndex: 1,
                 pointerEvents: 'none',
-                boxShadow: '0 0 2px rgba(0, 0, 0, 0.5)',
+                boxShadow: `0 0 2px ${shadowColor}`,
                 // Remove transition to prevent visual glitches during movement
               }}
             />

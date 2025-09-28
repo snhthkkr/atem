@@ -285,6 +285,10 @@ body {
   transition: opacity 0.3s ease;
 }
 
+.board.connect-mode {
+  background: #000000;
+}
+
 /* Thought states */
 .thought.selected {
   border: 3px solid #4caf50;
@@ -292,13 +296,24 @@ body {
 }
 
 .thought.connect-mode {
-  border: 2px dashed #2196f3;
+  border: 2px dashed #000;
   cursor: crosshair;
+  background: #000;
+  color: #fff;
 }
 
 .thought.connect-mode:hover {
-  border-color: #1976d2;
-  background: rgba(33, 150, 243, 0.05);
+  border-color: #333;
+  background: #111;
+}
+
+.thought.connect-mode textarea {
+  background: #000;
+  color: #fff;
+}
+
+.thought.connect-mode textarea::placeholder {
+  color: #666;
 }
 
 /* Metadata display */
