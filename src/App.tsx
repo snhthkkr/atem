@@ -165,6 +165,21 @@ function App() {
   const [activeThoughtId, setActiveThoughtId] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<'edit' | 'connect'>('edit');
   const [selectedThought, setSelectedThought] = useState<string | null>(null);
+  
+  // Mode debugging states
+  const [debugStates, setDebugStates] = useState({
+    isDragging: false,
+    wasDragging: false,
+    clickProcessed: false,
+    lastClickTime: 0,
+    lastAction: 'none',
+    thoughtStates: {} as Record<string, {
+      isActive: boolean,
+      isSelected: boolean,
+      isDragging: boolean,
+      wasDragging: boolean
+    }>
+  });
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
@@ -258,29 +273,44 @@ function App() {
     (dispatch as any)({ type: "__redo__" });
   };
 
+  const updateDebugState = (updates: Partial<typeof debugStates>) => {
+    setDebugStates(prev => ({ ...prev, ...updates }));
+  };
+
   const handleThoughtClick = (thoughtId: string) => {
+    const now = Date.now();
     console.log('🖱️ Thought click:', thoughtId, 'Mode:', currentMode, 'Selected:', selectedThought);
+    
+    updateDebugState({
+      lastClickTime: now,
+      clickProcessed: true,
+      lastAction: 'thought_click'
+    });
     
     if (currentMode === 'edit') {
       // Edit mode - just edit the thought
       console.log('📝 Edit mode - focusing thought');
       setActiveThoughtId(thoughtId);
+      updateDebugState({ lastAction: 'edit_mode_focus' });
     } else if (currentMode === 'connect') {
       // Connect mode - handle connection logic only (no editing)
       if (selectedThought === null) {
         // No thought selected - select this one
         console.log('🔗 Connect mode - selecting thought');
         setSelectedThought(thoughtId);
+        updateDebugState({ lastAction: 'connect_mode_select' });
         // Don't focus for editing in connect mode
       } else if (selectedThought === thoughtId) {
         // Same thought - deselect
         console.log('❌ Connect mode - deselecting thought');
         setSelectedThought(null);
+        updateDebugState({ lastAction: 'connect_mode_deselect' });
       } else {
         // Different thought - create connection
         console.log('✅ Connect mode - creating connection');
         dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: selectedThought, targetId: thoughtId });
         setSelectedThought(null);
+        updateDebugState({ lastAction: 'connect_mode_connect' });
       }
     }
   };
@@ -502,6 +532,62 @@ function App() {
           )}
         </div>
 
+        {/* Mode Debugger */}
+        <div className="mode-debugger">
+          <div className="debug-section">
+            <strong>🎯 Current States:</strong>
+            <div className="debug-grid">
+              <div className={`debug-item ${currentMode === 'edit' ? 'active' : ''}`}>
+                Mode: {currentMode.toUpperCase()}
+              </div>
+              <div className={`debug-item ${activeThoughtId ? 'active' : ''}`}>
+                Active: {activeThoughtId ? 'Yes' : 'No'}
+              </div>
+              <div className={`debug-item ${selectedThought ? 'active' : ''}`}>
+                Selected: {selectedThought ? 'Yes' : 'No'}
+              </div>
+              <div className={`debug-item ${debugStates.isDragging ? 'active' : ''}`}>
+                Dragging: {debugStates.isDragging ? 'Yes' : 'No'}
+              </div>
+              <div className={`debug-item ${debugStates.wasDragging ? 'active' : ''}`}>
+                Was Dragging: {debugStates.wasDragging ? 'Yes' : 'No'}
+              </div>
+              <div className={`debug-item ${debugStates.clickProcessed ? 'active' : ''}`}>
+                Click Processed: {debugStates.clickProcessed ? 'Yes' : 'No'}
+              </div>
+            </div>
+          </div>
+          
+          <div className="debug-section">
+            <strong>⚡ Last Action:</strong>
+            <div className="debug-action">
+              {debugStates.lastAction} 
+              {debugStates.lastClickTime > 0 && (
+                <span className="debug-time">
+                  ({Math.round((Date.now() - debugStates.lastClickTime) / 1000)}s ago)
+                </span>
+              )}
+            </div>
+          </div>
+          
+          <div className="debug-section">
+            <strong>🧠 Thought States:</strong>
+            <div className="thought-debug">
+              {state.thoughts.map(thought => (
+                <div key={thought.id} className="thought-debug-item">
+                  <span className="thought-id">{thought.id.slice(0, 8)}</span>
+                  <div className="thought-states">
+                    <span className={`state ${thought.id === activeThoughtId ? 'active' : ''}`}>A</span>
+                    <span className={`state ${thought.id === selectedThought ? 'active' : ''}`}>S</span>
+                    <span className={`state ${debugStates.thoughtStates[thought.id]?.isDragging ? 'active' : ''}`}>D</span>
+                    <span className={`state ${debugStates.thoughtStates[thought.id]?.wasDragging ? 'active' : ''}`}>W</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Developer Tools (collapsible) */}
         <details className="dev-tools">
           <summary>🛠️ Dev Tools</summary>
@@ -659,6 +745,15 @@ function App() {
               isActive={thought.id === activeThoughtId}
               isSelected={selectedThought === thought.id}
               currentMode={currentMode}
+              onDebugUpdate={(updates) => updateDebugState({
+                thoughtStates: {
+                  ...debugStates.thoughtStates,
+                  [thought.id]: {
+                    ...debugStates.thoughtStates[thought.id],
+                    ...updates
+                  }
+                }
+              })}
               connectionCount={getConnectionCount(thought.id)}
               zoom={zoom}
               showMetadata={showMetadata}
@@ -679,6 +774,7 @@ interface DraggableProps {
   isActive: boolean;
   isSelected: boolean;
   currentMode: 'edit' | 'connect';
+  onDebugUpdate: (updates: { isDragging?: boolean; wasDragging?: boolean }) => void;
   connectionCount: number;
   zoom: number;
   showMetadata: boolean;
@@ -694,6 +790,7 @@ function DraggableThought({
   isActive,
   isSelected,
   currentMode,
+  onDebugUpdate,
   connectionCount,
   zoom,
   showMetadata,
@@ -749,6 +846,7 @@ function DraggableThought({
         dragging.current = true;
         wasDragging.current = true;
         onDragStart(); // Notify parent that we're dragging
+        onDebugUpdate({ isDragging: true, wasDragging: true });
       }
       
       if (dragging.current) {
@@ -774,6 +872,7 @@ function DraggableThought({
         posRef.current.x = startPos.x + dx;
         posRef.current.y = startPos.y + dy;
         onDragEnd(posRef.current.x, posRef.current.y);
+        onDebugUpdate({ isDragging: false });
       }
       
       el?.releasePointerCapture(e.pointerId);
