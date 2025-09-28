@@ -59,7 +59,7 @@ body {
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  /* Removed transition for fundamental simplicity */
 }
 
 .control-bar button:hover:not(:disabled) {
@@ -164,7 +164,7 @@ body {
   cursor: pointer;
   font-size: 11px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  /* Removed transition for fundamental simplicity */
 }
 
 .dev-buttons button:hover:not(:disabled) {
@@ -214,7 +214,7 @@ body {
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  transition: all 0.2s ease;
+  /* Removed transition for fundamental simplicity */
 }
 
 .burger-menu:hover {
@@ -431,7 +431,7 @@ body {
   background: #fdfdfd;
   position: relative;
   touch-action: manipulation;
-  transition: opacity 0.3s ease;
+  /* Removed transition for fundamental simplicity */
 }
 
 .board.connect-mode {
@@ -482,7 +482,7 @@ body {
   white-space: nowrap;
   z-index: 15;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  /* Removed transition for fundamental simplicity */
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -531,9 +531,4 @@ body {
   /* Remove transition to prevent visual glitches */
 }
 
-/* Pulse animation for connection preview */
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
+/* Removed pulse animation for fundamental simplicity */
