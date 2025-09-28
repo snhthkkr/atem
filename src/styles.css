@@ -561,7 +561,7 @@ body {
 }
 
 .thought.connect-mode {
-  border: 2px dashed #000;
+  border: 2px solid #fff;
   cursor: crosshair;
   background: #000;
   color: #fff;
