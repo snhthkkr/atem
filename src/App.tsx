@@ -702,6 +702,7 @@ function DraggableThought({
   const ref = useRef<HTMLDivElement>(null);
   const posRef = useRef({ x: thought.x, y: thought.y });
   const dragging = useRef(false);
+  const wasDragging = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -734,6 +735,9 @@ function DraggableThought({
     const startPos = { ...posRef.current };
     const el = ref.current;
     el?.setPointerCapture(e.pointerId);
+    
+    // Prevent click events during potential drag
+    e.preventDefault();
 
     const handlePointerMove = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
@@ -743,6 +747,7 @@ function DraggableThought({
       // Only start dragging if we've moved more than 5 pixels
       if (distance > 5 && !dragging.current) {
         dragging.current = true;
+        wasDragging.current = true;
         onDragStart(); // Notify parent that we're dragging
       }
       
@@ -791,11 +796,14 @@ function DraggableThought({
         e.stopPropagation();
         
         // If we just finished dragging, don't do anything
-        if (dragging.current) {
+        if (dragging.current || wasDragging.current) {
+          console.log('🚫 Ignoring click - was dragging');
+          wasDragging.current = false; // Reset for next interaction
           return;
         }
         
         // Handle click on thought (anywhere - text or border)
+        console.log('✅ Processing click - not dragging');
         onLinkClick();
       }}
       data-thought-id={thought.id}
