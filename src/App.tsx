@@ -499,7 +499,7 @@ function App() {
       {showDevMenu && (
         <div className={`dev-menu ${currentMode === 'connect' ? 'connect-mode' : ''}`}>
           <div className="dev-menu-header">
-            <h3>🛠️ Dev Tools</h3>
+            <h3>⚙️ Menu</h3>
             <button onClick={() => setShowDevMenu(false)}>✕</button>
           </div>
           
@@ -540,61 +540,6 @@ function App() {
               </div>
             </div>
 
-            {/* Testing Tools */}
-            <div className="dev-section">
-              <h4>Testing</h4>
-              <div className="dev-buttons">
-                <button onClick={() => {
-                  const id = (crypto as any).randomUUID();
-                  dispatch({ type: "createThought", id, x: Math.random() * 800 + 100, y: Math.random() * 600 + 100, text: "Test Thought" });
-                }}>
-                  🧪 Add Test Thought
-                </button>
-                <button onClick={() => {
-                  const thoughts = state.thoughts;
-                  if (thoughts.length >= 2) {
-                    const source = thoughts[0];
-                    const target = thoughts[1];
-                    dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: source.id, targetId: target.id });
-                  }
-                }}>
-                  🔗 Connect First Two
-                </button>
-                <button onClick={() => {
-                  console.log('=== STATE DEBUG ===');
-                  console.log('Thoughts:', state.thoughts.length);
-                  console.log('Links:', state.links.length);
-                  console.log('Mode:', currentMode);
-                  console.log('Active:', activeThoughtId);
-                  console.log('Selected:', selectedThought);
-                  console.log('==================');
-                }}>
-                  📊 Debug State
-                </button>
-                <button onClick={() => {
-                  localStorage.clear();
-                  window.location.reload();
-                }}>
-                  🔄 Reset Everything
-                </button>
-              </div>
-            </div>
-
-            {/* Debug Info */}
-            <div className="dev-section">
-              <h4>Debug</h4>
-              <div className="debug-info">
-                <div className="debug-stats">
-                  <span>Mode: {currentMode.toUpperCase()}</span>
-                  <span>Active: {activeThoughtId ? 'Yes' : 'No'}</span>
-                  <span>Selected: {selectedThought ? 'Yes' : 'No'}</span>
-                  <span>Dragging: {debugStates.isDragging ? 'Yes' : 'No'}</span>
-                </div>
-                <div className="debug-action">
-                  Last: {debugStates.lastAction}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -615,7 +560,7 @@ function App() {
           borderRadius: '8px',
           padding: '10px',
           zIndex: 1001,
-          minWidth: '300px',
+          minWidth: '300px'
         }}>
           <input
             type="text"

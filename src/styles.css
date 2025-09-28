@@ -26,6 +26,14 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
+  /* Mobile touch support */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* Touch-friendly sizing */
+  min-height: 44px;
 }
 
 /* Night mode for connect mode */
@@ -45,6 +53,15 @@ body {
   font-weight: 500;
   color: #333;
   transition: all 0.2s ease;
+  /* Mobile touch support */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* Touch-friendly sizing */
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .minimal-control-bar.connect-mode button {
@@ -547,6 +564,12 @@ body {
   background: #fdfdfd;
   position: relative;
   touch-action: manipulation;
+  /* Mobile touch support */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   /* Removed transition for fundamental simplicity */
 }
 
@@ -624,6 +647,14 @@ body {
   cursor: move;
   user-select: none;
   z-index: 1;
+  /* Mobile touch support */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* Touch-friendly sizing */
+  min-height: 44px;
   /* Remove transition to prevent visual glitches during movement */
 }
 
@@ -636,6 +667,14 @@ body {
   background: transparent;
   resize: none;
   overflow: hidden;
+  /* Mobile touch support */
+  -webkit-touch-callout: none;
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  /* Touch-friendly font size */
+  font-size: 16px;
 }
 
 .thought.focused {
