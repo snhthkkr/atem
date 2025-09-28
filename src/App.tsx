@@ -674,8 +674,8 @@ function App() {
           const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
           const angle = Math.atan2(endY - startY, endX - startX);
           
-          // Night mode lines in connect mode - white on black
-          const lineColor = currentMode === 'connect' ? '#ffffff' : '#ffffff';
+          // Monochrome lines - black in edit mode, white in connect mode
+          const lineColor = currentMode === 'connect' ? '#ffffff' : '#000000';
           const shadowColor = currentMode === 'connect' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.5)';
           
           return (
