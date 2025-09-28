@@ -279,16 +279,18 @@ function App() {
   };
 
   const handleLinkClick = (thoughtId: string) => {
-    console.log('LINK CLICK:', thoughtId, 'LINKING FROM:', linkingFrom);
+    console.log('🔗 LINK CLICK:', thoughtId, 'LINKING FROM:', linkingFrom);
     
     if (linkingFrom) {
       // We're in linking mode - complete the connection
       if (linkingFrom !== thoughtId) {
+        console.log('✅ Creating connection from', linkingFrom, 'to', thoughtId);
         dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: linkingFrom, targetId: thoughtId });
       }
       setLinkingFrom(null); // Exit linking mode
     } else {
       // Start linking mode
+      console.log('🚀 Starting connection mode for', thoughtId);
       setLinkingFrom(thoughtId);
     }
   };
@@ -706,6 +708,7 @@ function DraggableThought({
   const posRef = useRef({ x: thought.x, y: thought.y });
   const dragging = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const doubleClickHandled = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -792,30 +795,48 @@ function DraggableThought({
       onPointerDown={handlePointerDown}
       onClick={(e) => {
         e.stopPropagation();
+        console.log('🖱️ Single click on thought:', thought.id);
         
         // If we just finished dragging, don't do anything
         if (dragging.current) {
+          console.log('❌ Ignoring click - was dragging');
           return;
         }
         
         // If clicking on textarea, just focus it
         if (e.target === textareaRef.current) {
+          console.log('📝 Clicking textarea - focusing');
           onFocus();
           return;
         }
         
-        // Single click: focus the thought (enter edit mode)
-        onFocus();
-      }}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        
-        // If we just finished dragging, don't do anything
-        if (dragging.current) {
+        // Check if double click was handled
+        if (doubleClickHandled.current) {
+          console.log('❌ Ignoring single click - double click was handled');
+          doubleClickHandled.current = false;
           return;
         }
         
+        // Single click: focus the thought (enter edit mode)
+        console.log('✅ Single click - entering edit mode');
+        onFocus();
+      }}
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🖱️🖱️ Double click on thought:', thought.id);
+        
+        // If we just finished dragging, don't do anything
+        if (dragging.current) {
+          console.log('❌ Ignoring double click - was dragging');
+          return;
+        }
+        
+        // Mark that double click was handled
+        doubleClickHandled.current = true;
+        
         // Double click: start connection mode
+        console.log('✅ Double click - starting connection mode');
         onLinkClick();
       }}
       data-thought-id={thought.id}
