@@ -163,9 +163,8 @@ function App() {
   });
 
   const [activeThoughtId, setActiveThoughtId] = useState<string | null>(null);
-  const [linkingFrom, setLinkingFrom] = useState<string | null>(null);
-  const [lastClickTime, setLastClickTime] = useState<number>(0);
-  const [lastClickThought, setLastClickThought] = useState<string | null>(null);
+  const [currentMode, setCurrentMode] = useState<'edit' | 'connect'>('edit');
+  const [selectedThought, setSelectedThought] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
@@ -198,27 +197,6 @@ function App() {
     }
   }, [activeThoughtId]);
 
-  // Track mouse position for connection line
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (linkingFrom) {
-        const wrapper = wrapperRef.current;
-        if (wrapper) {
-          const rect = wrapper.getBoundingClientRect();
-          const offset = { x: wrapper.scrollLeft, y: wrapper.scrollTop };
-          setMousePos({
-            x: (e.clientX - rect.left + offset.x) / zoom,
-            y: (e.clientY - rect.top + offset.y) / zoom
-          });
-        }
-      }
-    };
-
-    if (linkingFrom) {
-      window.addEventListener('mousemove', handleMouseMove);
-      return () => window.removeEventListener('mousemove', handleMouseMove);
-    }
-  }, [linkingFrom, zoom]);
 
   const addThoughtAt = (x: number, y: number) => {
     const id = (crypto as any).randomUUID();
@@ -281,31 +259,29 @@ function App() {
   };
 
   const handleThoughtClick = (thoughtId: string) => {
-    const now = Date.now();
-    const isDoubleClick = (now - lastClickTime < 300) && (lastClickThought === thoughtId);
+    console.log('🖱️ Thought click:', thoughtId, 'Mode:', currentMode, 'Selected:', selectedThought);
     
-    console.log('🖱️ Thought click:', thoughtId, 'isDoubleClick:', isDoubleClick, 'linkingFrom:', linkingFrom);
-    
-    if (linkingFrom) {
-      // We're in connection mode - complete the connection
-      if (linkingFrom !== thoughtId) {
-        console.log('✅ Creating connection from', linkingFrom, 'to', thoughtId);
-        dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: linkingFrom, targetId: thoughtId });
-      }
-      setLinkingFrom(null); // Exit connection mode
-    } else if (isDoubleClick) {
-      // Double click - start connection mode
-      console.log('🚀 Starting connection mode for', thoughtId);
-      setLinkingFrom(thoughtId);
-    } else {
-      // Single click - edit mode
-      console.log('📝 Entering edit mode for', thoughtId);
+    if (currentMode === 'edit') {
+      // Edit mode - just edit the thought
+      console.log('📝 Edit mode - focusing thought');
       setActiveThoughtId(thoughtId);
+    } else if (currentMode === 'connect') {
+      // Connect mode - handle connection logic
+      if (selectedThought === null) {
+        // No thought selected - select this one
+        console.log('🔗 Connect mode - selecting thought');
+        setSelectedThought(thoughtId);
+      } else if (selectedThought === thoughtId) {
+        // Same thought - deselect
+        console.log('❌ Connect mode - deselecting thought');
+        setSelectedThought(null);
+      } else {
+        // Different thought - create connection
+        console.log('✅ Connect mode - creating connection');
+        dispatch({ type: "createLink", id: (crypto as any).randomUUID(), sourceId: selectedThought, targetId: thoughtId });
+        setSelectedThought(null);
+      }
     }
-    
-    // Update click tracking
-    setLastClickTime(now);
-    setLastClickThought(thoughtId);
   };
 
   const getWrapperOffset = () => {
@@ -322,13 +298,6 @@ function App() {
     // If we just finished dragging, don't do anything
     if (hasDragged) {
       setHasDragged(false);
-      return;
-    }
-
-    // If in connection mode, exit it
-    if (linkingFrom) {
-      console.log('❌ Exiting connection mode - clicked empty space');
-      setLinkingFrom(null);
       return;
     }
 
@@ -378,8 +347,9 @@ function App() {
         }
       }
       if (e.key === "Escape") {
-        if (linkingFrom) {
-          setLinkingFrom(null);
+        if (currentMode === 'connect') {
+          setCurrentMode('edit');
+          setSelectedThought(null);
         }
         if (showSearch) {
           setShowSearch(false);
@@ -464,6 +434,30 @@ function App() {
         <button onClick={() => setZoom(1)}>Reset</button>
         </div>
 
+        {/* Mode Controls */}
+        <div className="mode-controls">
+          <button 
+            className={currentMode === 'edit' ? 'active' : ''}
+            onClick={() => {
+              setCurrentMode('edit');
+              setSelectedThought(null);
+              console.log('📝 Switched to Edit Mode');
+            }}
+          >
+            📝 Edit Mode
+          </button>
+          <button 
+            className={currentMode === 'connect' ? 'active' : ''}
+            onClick={() => {
+              setCurrentMode('connect');
+              setSelectedThought(null);
+              console.log('🔗 Switched to Connect Mode');
+            }}
+          >
+            🔗 Connect Mode
+          </button>
+        </div>
+
         {/* Thought Actions */}
         <div className="thought-actions">
           <button onClick={() => activeThought && deleteThought(activeThought.id)} disabled={!activeThought}>
@@ -501,12 +495,14 @@ function App() {
         </label>
       </div>
 
-        {/* Linking Status */}
+        {/* Mode Status */}
         <div className="linking-status">
-          {linkingFrom ? (
-            <span className="linking-active">🔗 CONNECTION MODE - Click any thought to connect, or empty space to cancel</span>
+          {currentMode === 'edit' ? (
+            <span className="linking-ready">📝 EDIT MODE - Click thoughts to edit, drag to move</span>
           ) : (
-            <span className="linking-ready">Click to edit • Double-click to connect</span>
+            <span className="linking-active">
+              🔗 CONNECT MODE - {selectedThought ? 'Click another thought to connect' : 'Click a thought to select'}
+            </span>
           )}
         </div>
 
@@ -658,37 +654,6 @@ function App() {
           );
         })}
         
-        {/* Cursor line during connection mode */}
-        {linkingFrom && (() => {
-          const sourceThought = state.thoughts.find(t => t.id === linkingFrom);
-          if (!sourceThought) return null;
-          
-          const startX = sourceThought.x + 125;
-          const startY = sourceThought.y + 25;
-          const endX = mousePos.x;
-          const endY = mousePos.y;
-          const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-          const angle = Math.atan2(endY - startY, endX - startX);
-          
-          return (
-            <div
-              style={{
-                position: 'absolute',
-                left: startX,
-                top: startY,
-                width: length,
-                height: 2,
-                background: 'rgba(255, 255, 255, 0.6)',
-                transformOrigin: '0 0',
-                transform: `rotate(${angle}rad)`,
-                zIndex: 2,
-                pointerEvents: 'none',
-                boxShadow: '0 0 6px rgba(0, 0, 0, 0.4)',
-                border: '1px dashed rgba(255, 255, 255, 0.8)',
-              }}
-            />
-          );
-        })()}
 
         {state.thoughts.map((thought) => (
             <DraggableThought
@@ -699,7 +664,8 @@ function App() {
               onFocus={() => setActiveThoughtId(thought.id)}
               onLinkClick={() => handleThoughtClick(thought.id)}
               isActive={thought.id === activeThoughtId}
-              isLinking={linkingFrom === thought.id}
+              isSelected={selectedThought === thought.id}
+              currentMode={currentMode}
               connectionCount={getConnectionCount(thought.id)}
               zoom={zoom}
               showMetadata={showMetadata}
@@ -718,7 +684,8 @@ interface DraggableProps {
   onFocus: () => void;
   onLinkClick: () => void;
   isActive: boolean;
-  isLinking: boolean;
+  isSelected: boolean;
+  currentMode: 'edit' | 'connect';
   connectionCount: number;
   zoom: number;
   showMetadata: boolean;
@@ -732,7 +699,8 @@ function DraggableThought({
   onFocus,
   onLinkClick,
   isActive,
-  isLinking,
+  isSelected,
+  currentMode,
   connectionCount,
   zoom,
   showMetadata,
@@ -823,7 +791,7 @@ function DraggableThought({
 
   return (
     <div
-      className={`thought ${isActive ? "focused" : ""} ${isLinking ? "linking" : ""}`}
+      className={`thought ${isActive ? "focused" : ""} ${isSelected ? "selected" : ""} ${currentMode === 'connect' ? "connect-mode" : ""}`}
       ref={ref}
       onPointerDown={handlePointerDown}
       onClick={(e) => {
