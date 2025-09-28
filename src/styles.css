@@ -10,6 +10,23 @@ body {
   overflow: scroll;
 }
 
+/* Minimal Control Bar */
+.minimal-control-bar {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
 .control-bar {
   position: fixed;
   top: 10px;
@@ -71,6 +88,138 @@ body {
   background: #4caf50;
   border-color: #4caf50;
   color: white;
+}
+
+/* Dev Menu */
+.dev-menu {
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  max-width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dev-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.dev-menu-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dev-menu-header button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.dev-menu-header button:hover {
+  background: #f0f0f0;
+}
+
+.dev-menu-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dev-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dev-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dev-buttons button {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dev-buttons button:hover:not(:disabled) {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.dev-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.debug-info {
+  font-size: 11px;
+  color: #666;
+}
+
+.debug-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.debug-stats span {
+  padding: 2px 6px;
+  background: #f8f9fa;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.debug-action {
+  padding: 6px 8px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+/* Burger Menu Button */
+.burger-menu {
+  background: none;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.burger-menu:hover {
+  background: #f0f0f0;
+  transform: scale(1.05);
 }
 
 /* Mode Debugger */

@@ -185,6 +185,7 @@ function App() {
   const [showMetadata, setShowMetadata] = useState<boolean>(false);
   const [hasDragged, setHasDragged] = useState<boolean>(false);
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [showDevMenu, setShowDevMenu] = useState<boolean>(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const boardSize = { width: 3000, height: 3000 };
   const [zoom, setZoom] = useState<number>(1);
@@ -452,21 +453,8 @@ function App() {
 
   return (
     <div ref={wrapperRef} className="board-wrapper">
-      <div className="control-bar">
-        {/* Version Display */}
-        <div className="version-display">
-          <span className="version-name">{getVersionName()}</span>
-          <span className="version-stats">{state.thoughts.length} thoughts • {state.links.length} connections</span>
-        </div>
-
-        {/* Core Controls */}
-        <div className="core-controls">
-        <button onClick={() => setZoom((z) => Math.max(0.4, parseFloat((z - 0.1).toFixed(2))))}>−</button>
-        <span className="zoom-label">{Math.round(zoom * 100)}%</span>
-        <button onClick={() => setZoom((z) => Math.min(2, parseFloat((z + 0.1).toFixed(2))))}>+</button>
-        <button onClick={() => setZoom(1)}>Reset</button>
-        </div>
-
+      {/* Minimal Control Bar */}
+      <div className="minimal-control-bar">
         {/* Mode Controls */}
         <div className="mode-controls">
           <button 
@@ -477,7 +465,7 @@ function App() {
               console.log('📝 Switched to Edit Mode');
             }}
           >
-            📝 Edit Mode
+            📝 Edit
           </button>
           <button 
             className={currentMode === 'connect' ? 'active' : ''}
@@ -487,159 +475,93 @@ function App() {
               console.log('🔗 Switched to Connect Mode');
             }}
           >
-            🔗 Connect Mode
+            🔗 Connect
           </button>
         </div>
 
-        {/* Essential Actions */}
-        <div className="essential-actions">
-          <button onClick={() => activeThought && deleteThought(activeThought.id)} disabled={!activeThought || currentMode === 'connect'}>
-            🗑️ Delete
-          </button>
-          <button onClick={undo} disabled={state.cursor === 0}>↶ Undo</button>
-          <button onClick={redo} disabled={state.cursor >= state.events.length}>↷ Redo</button>
-          <button onClick={() => setShowSearch(!showSearch)}>🔍 Search</button>
+        {/* Zoom Controls */}
+        <div className="zoom-controls">
+          <button onClick={() => setZoom((z) => Math.max(0.4, parseFloat((z - 0.1).toFixed(2))))}>−</button>
+          <span className="zoom-label">{Math.round(zoom * 100)}%</span>
+          <button onClick={() => setZoom((z) => Math.min(2, parseFloat((z + 0.1).toFixed(2))))}>+</button>
         </div>
 
-        {/* Dev Tools */}
-        <div className="dev-tools">
-          <button onClick={exportThoughts}>📤 Export</button>
-          <label className="import-label">
-            📥 Import
-            <input
-              type="file"
-              accept="application/json"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) importThoughts(f);
-                e.currentTarget.value = "";
-              }}
-            />
-          </label>
-          <button onClick={() => setShowMetadata(!showMetadata)} className={showMetadata ? "active" : ""}>
-            📊 {showMetadata ? "Hide" : "Show"} Metadata
-          </button>
-        </div>
-
-        {/* Mode Status */}
-        <div className="linking-status">
-          {currentMode === 'edit' ? (
-            <span className="linking-ready">📝 EDIT MODE - Click thoughts to edit, drag to move, click empty space to create</span>
-          ) : (
-            <span className="linking-active">
-              🔗 CONNECT MODE - {selectedThought ? 'Click another thought to connect' : 'Click a thought to select'} • No editing or creating
-            </span>
-          )}
-        </div>
-
-        {/* Mode Debugger */}
-        <div className="mode-debugger">
-          <div className="debug-section">
-            <strong>🎯 Current States:</strong>
-            <div className="debug-grid">
-              <div className={`debug-item ${currentMode === 'edit' ? 'active' : ''}`}>
-                Mode: {currentMode.toUpperCase()}
-              </div>
-              <div className={`debug-item ${activeThoughtId ? 'active' : ''}`}>
-                Active: {activeThoughtId ? 'Yes' : 'No'}
-              </div>
-              <div className={`debug-item ${selectedThought ? 'active' : ''}`}>
-                Selected: {selectedThought ? 'Yes' : 'No'}
-              </div>
-              <div className={`debug-item ${debugStates.isDragging ? 'active' : ''}`}>
-                Dragging: {debugStates.isDragging ? 'Yes' : 'No'}
-              </div>
-              <div className={`debug-item ${debugStates.wasDragging ? 'active' : ''}`}>
-                Was Dragging: {debugStates.wasDragging ? 'Yes' : 'No'}
-              </div>
-              <div className={`debug-item ${debugStates.clickProcessed ? 'active' : ''}`}>
-                Click Processed: {debugStates.clickProcessed ? 'Yes' : 'No'}
-              </div>
-            </div>
-          </div>
-          
-          <div className="debug-section">
-            <strong>⚡ Last Action:</strong>
-            <div className="debug-action">
-              {debugStates.lastAction} 
-              {debugStates.lastClickTime > 0 && (
-                <span className="debug-time">
-                  ({Math.round((Date.now() - debugStates.lastClickTime) / 1000)}s ago)
-                </span>
-              )}
-            </div>
-          </div>
-          
-          <div className="debug-section">
-            <strong>🧠 Thought States:</strong>
-            <div className="thought-debug">
-              {state.thoughts.map(thought => (
-                <div key={thought.id} className="thought-debug-item">
-                  <span className="thought-id">{thought.id.slice(0, 8)}</span>
-                  <div className="thought-states">
-                    <span className={`state ${thought.id === activeThoughtId ? 'active' : ''}`}>A</span>
-                    <span className={`state ${thought.id === selectedThought ? 'active' : ''}`}>S</span>
-                    <span className={`state ${debugStates.thoughtStates[thought.id]?.isDragging ? 'active' : ''}`}>D</span>
-                    <span className={`state ${debugStates.thoughtStates[thought.id]?.wasDragging ? 'active' : ''}`}>W</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Developer Tools (collapsible) */}
-        <details className="dev-tools">
-          <summary>🛠️ Dev Tools</summary>
-          
-          {/* Mode Guide */}
-          <div style={{ 
-            background: '#f8f9fa', 
-            padding: '12px', 
-            margin: '8px 0', 
-            borderRadius: '6px', 
-            border: '1px solid #dee2e6',
-            fontSize: '12px',
-            lineHeight: '1.4'
-          }}>
-            <strong>📋 MODE GUIDE:</strong><br/>
-            <strong>📝 Edit Mode:</strong> Click thoughts to edit, drag to move<br/>
-            <strong>🔗 Connect Mode:</strong> Click thoughts to select/connect (no editing)<br/>
-            <strong>Empty space:</strong> Create new thought (any mode)
-          </div>
-          
-          <div className="dev-buttons">
-            <button onClick={() => {
-              console.log('=== STATE DEBUG ===');
-              console.log('Thoughts count:', state.thoughts.length);
-              console.log('Thought IDs:', state.thoughts.map(t => t.id));
-              console.log('Duplicate IDs:', state.thoughts.map(t => t.id).filter((id, index, arr) => arr.indexOf(id) !== index));
-              console.log('Events count:', state.events.length);
-              console.log('Links count:', state.links.length);
-              console.log('==================');
-            }}>Debug State</button>
-            <button onClick={() => {
-              localStorage.clear();
-              window.location.reload();
-            }}>Reset Everything</button>
-            <button onClick={() => {
-              const uniqueThoughts = state.thoughts.filter((thought, index, arr) => 
-                arr.findIndex(t => t.id === thought.id) === index
-              );
-              const uniqueLinks = state.links.filter((link, index, arr) => 
-                arr.findIndex(l => l.id === link.id) === index
-              );
-              console.log('Cleaned thoughts:', uniqueThoughts.length, 'from', state.thoughts.length);
-              console.log('Cleaned links:', uniqueLinks.length, 'from', state.links.length);
-              dispatch({ type: "__reset__", payload: uniqueThoughts });
-            }}>Clean State</button>
-            <button onClick={() => {
-              const id = (crypto as any).randomUUID();
-              dispatch({ type: "createThought", id, x: 200, y: 200, text: "Test" });
-            }}>Quick Test</button>
-          </div>
-        </details>
+        {/* Burger Menu */}
+        <button 
+          className="burger-menu"
+          onClick={() => setShowDevMenu(!showDevMenu)}
+        >
+          ☰
+        </button>
       </div>
+
+      {/* Dev Menu (Collapsible) */}
+      {showDevMenu && (
+        <div className="dev-menu">
+          <div className="dev-menu-header">
+            <h3>🛠️ Dev Tools</h3>
+            <button onClick={() => setShowDevMenu(false)}>✕</button>
+          </div>
+          
+          <div className="dev-menu-content">
+            {/* Essential Actions */}
+            <div className="dev-section">
+              <h4>Essential</h4>
+              <div className="dev-buttons">
+                <button onClick={() => activeThought && deleteThought(activeThought.id)} disabled={!activeThought || currentMode === 'connect'}>
+                  🗑️ Delete
+                </button>
+                <button onClick={undo} disabled={state.cursor === 0}>↶ Undo</button>
+                <button onClick={redo} disabled={state.cursor >= state.events.length}>↷ Redo</button>
+                <button onClick={() => setShowSearch(!showSearch)}>🔍 Search</button>
+              </div>
+            </div>
+
+            {/* Data Tools */}
+            <div className="dev-section">
+              <h4>Data</h4>
+              <div className="dev-buttons">
+                <button onClick={exportThoughts}>📤 Export</button>
+                <label className="import-label">
+                  📥 Import
+                  <input
+                    type="file"
+                    accept="application/json"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) importThoughts(f);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                <button onClick={() => setShowMetadata(!showMetadata)} className={showMetadata ? "active" : ""}>
+                  📊 {showMetadata ? "Hide" : "Show"} Metadata
+                </button>
+              </div>
+            </div>
+
+            {/* Debug Info */}
+            <div className="dev-section">
+              <h4>Debug</h4>
+              <div className="debug-info">
+                <div className="debug-stats">
+                  <span>Mode: {currentMode.toUpperCase()}</span>
+                  <span>Active: {activeThoughtId ? 'Yes' : 'No'}</span>
+                  <span>Selected: {selectedThought ? 'Yes' : 'No'}</span>
+                  <span>Dragging: {debugStates.isDragging ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="debug-action">
+                  Last: {debugStates.lastAction}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+
       
       {/* Search Interface */}
       {showSearch && (
