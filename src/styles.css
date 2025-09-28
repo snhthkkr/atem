@@ -240,8 +240,8 @@ body {
   padding: 6px;
   cursor: move;
   user-select: none;
-  transition: all 0.2s ease;
   z-index: 1;
+  /* Remove transition to prevent visual glitches during movement */
 }
 
 .thought textarea {
@@ -261,6 +261,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   border-color: #000;
   background: #fffefc;
+  /* Remove transition to prevent visual glitches */
 }
 
 /* Pulse animation for connection preview */

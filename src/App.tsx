@@ -308,11 +308,13 @@ function App() {
       return;
     }
 
-    // Create new thought at click location
-    const offset = getWrapperOffset();
-    const x = (e.clientX + offset.x) / zoom;
-    const y = (e.clientY + offset.y) / zoom;
-    addThoughtAt(x, y);
+    // Only create new thoughts in edit mode
+    if (currentMode === 'edit') {
+      const offset = getWrapperOffset();
+      const x = (e.clientX + offset.x) / zoom;
+      const y = (e.clientY + offset.y) / zoom;
+      addThoughtAt(x, y);
+    }
   };
 
   // Keyboard shortcuts: Delete active (outside inputs), Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z redo
@@ -469,13 +471,33 @@ function App() {
           <button onClick={() => setShowSearch(!showSearch)}>🔍 Search</button>
         </div>
 
+        {/* Dev Tools */}
+        <div className="dev-tools">
+          <button onClick={exportThoughts}>📤 Export</button>
+          <label className="import-label">
+            📥 Import
+            <input
+              type="file"
+              accept="application/json"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) importThoughts(f);
+                e.currentTarget.value = "";
+              }}
+            />
+          </label>
+          <button onClick={() => setShowMetadata(!showMetadata)} className={showMetadata ? "active" : ""}>
+            📊 {showMetadata ? "Hide" : "Show"} Metadata
+          </button>
+        </div>
+
         {/* Mode Status */}
         <div className="linking-status">
           {currentMode === 'edit' ? (
-            <span className="linking-ready">📝 EDIT MODE - Click thoughts to edit, drag to move</span>
+            <span className="linking-ready">📝 EDIT MODE - Click thoughts to edit, drag to move, click empty space to create</span>
           ) : (
             <span className="linking-active">
-              🔗 CONNECT MODE - {selectedThought ? 'Click another thought to connect' : 'Click a thought to select'} • No editing allowed
+              🔗 CONNECT MODE - {selectedThought ? 'Click another thought to connect' : 'Click a thought to select'} • No editing or creating
             </span>
           )}
         </div>
@@ -613,13 +635,13 @@ function App() {
                 top: startY,
                 width: length,
                 height: 2,
-                background: 'rgba(255, 255, 255, 0.8)',
+                background: '#ffffff',
                 transformOrigin: '0 0',
                 transform: `rotate(${angle}rad)`,
                 zIndex: 1,
                 pointerEvents: 'none',
-                boxShadow: '0 0 4px rgba(0, 0, 0, 0.3)',
-                transition: 'all 0.2s ease-out', // Smooth movement
+                boxShadow: '0 0 2px rgba(0, 0, 0, 0.5)',
+                // Remove transition to prevent visual glitches during movement
               }}
             />
           );
