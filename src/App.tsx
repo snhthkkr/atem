@@ -266,11 +266,12 @@ function App() {
       console.log('📝 Edit mode - focusing thought');
       setActiveThoughtId(thoughtId);
     } else if (currentMode === 'connect') {
-      // Connect mode - handle connection logic
+      // Connect mode - handle connection logic only (no editing)
       if (selectedThought === null) {
         // No thought selected - select this one
         console.log('🔗 Connect mode - selecting thought');
         setSelectedThought(thoughtId);
+        // Don't focus for editing in connect mode
       } else if (selectedThought === thoughtId) {
         // Same thought - deselect
         console.log('❌ Connect mode - deselecting thought');
@@ -458,42 +459,15 @@ function App() {
           </button>
         </div>
 
-        {/* Thought Actions */}
-        <div className="thought-actions">
-          <button onClick={() => activeThought && deleteThought(activeThought.id)} disabled={!activeThought}>
+        {/* Essential Actions */}
+        <div className="essential-actions">
+          <button onClick={() => activeThought && deleteThought(activeThought.id)} disabled={!activeThought || currentMode === 'connect'}>
             🗑️ Delete
           </button>
-          <button onClick={() => activeThought && deleteAllConnections(activeThought.id)} disabled={!activeThought || getConnectionCount(activeThought.id) === 0}>
-            🔗 Delete Links
-          </button>
-        </div>
-
-        {/* History Controls */}
-        <div className="history-controls">
           <button onClick={undo} disabled={state.cursor === 0}>↶ Undo</button>
           <button onClick={redo} disabled={state.cursor >= state.events.length}>↷ Redo</button>
-        </div>
-
-        {/* Search & Data */}
-        <div className="data-controls">
           <button onClick={() => setShowSearch(!showSearch)}>🔍 Search</button>
-          <button onClick={() => setShowMetadata(!showMetadata)} className={showMetadata ? "active" : ""}>
-            📊 {showMetadata ? "Hide" : "Show"} Metadata
-          </button>
-          <button onClick={exportThoughts}>📤 Export</button>
-        <label className="import-label">
-            📥 Import
-          <input
-            type="file"
-            accept="application/json"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importThoughts(f);
-              e.currentTarget.value = "";
-            }}
-          />
-        </label>
-      </div>
+        </div>
 
         {/* Mode Status */}
         <div className="linking-status">
@@ -501,7 +475,7 @@ function App() {
             <span className="linking-ready">📝 EDIT MODE - Click thoughts to edit, drag to move</span>
           ) : (
             <span className="linking-active">
-              🔗 CONNECT MODE - {selectedThought ? 'Click another thought to connect' : 'Click a thought to select'}
+              🔗 CONNECT MODE - {selectedThought ? 'Click another thought to connect' : 'Click a thought to select'} • No editing allowed
             </span>
           )}
         </div>
@@ -510,7 +484,7 @@ function App() {
         <details className="dev-tools">
           <summary>🛠️ Dev Tools</summary>
           
-          {/* Clear Instructions */}
+          {/* Mode Guide */}
           <div style={{ 
             background: '#f8f9fa', 
             padding: '12px', 
@@ -520,13 +494,10 @@ function App() {
             fontSize: '12px',
             lineHeight: '1.4'
           }}>
-            <strong>📋 INTERACTION GUIDE:</strong><br/>
-            • <strong>1 Click</strong> on thought → Edit mode<br/>
-            • <strong>2 Clicks</strong> on thought → Connection mode<br/>
-            • <strong>1 Click</strong> on another thought → Connect them<br/>
-            • <strong>Click empty space</strong> → Cancel connection<br/>
-            • <strong>Drag</strong> thought → Move it<br/>
-            • <strong>Click empty space</strong> → Create new thought
+            <strong>📋 MODE GUIDE:</strong><br/>
+            <strong>📝 Edit Mode:</strong> Click thoughts to edit, drag to move<br/>
+            <strong>🔗 Connect Mode:</strong> Click thoughts to select/connect (no editing)<br/>
+            <strong>Empty space:</strong> Create new thought (any mode)
           </div>
           
           <div className="dev-buttons">
@@ -807,16 +778,21 @@ function DraggableThought({
       }}
       data-thought-id={thought.id}
     >
-      <textarea
-        ref={textareaRef}
-        value={thought.text}
-        onChange={(e) => {
-          onTextChange(e.target.value);
-          autoGrow();
-        }}
-        onFocus={onFocus}
-        onInput={autoGrow}
-      />
+            <textarea
+              ref={textareaRef}
+              value={thought.text}
+              onChange={(e) => {
+                onTextChange(e.target.value);
+                autoGrow();
+              }}
+              onFocus={currentMode === 'edit' ? onFocus : undefined}
+              onInput={autoGrow}
+              readOnly={currentMode === 'connect'}
+              style={{ 
+                cursor: currentMode === 'connect' ? 'crosshair' : 'text',
+                opacity: currentMode === 'connect' ? 0.8 : 1
+              }}
+            />
       {/* Connection count badge */}
       {connectionCount > 0 && (
         <div
