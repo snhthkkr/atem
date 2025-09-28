@@ -10,21 +10,52 @@ body {
   overflow: scroll;
 }
 
-/* Minimal Control Bar */
+/* Minimal Control Bar - Blends with canvas */
 .minimal-control-bar {
   position: fixed;
   top: 20px;
   left: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #333;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   padding: 8px 12px;
   display: flex;
   gap: 12px;
   align-items: center;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+/* White icons on black background */
+.minimal-control-bar button {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.minimal-control-bar button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.minimal-control-bar button.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: white;
+}
+
+.minimal-control-bar .zoom-label {
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 8px;
 }
 
 .control-bar {
@@ -90,21 +121,21 @@ body {
   color: white;
 }
 
-/* Dev Menu */
+/* Dev Menu - Blends with canvas */
 .dev-menu {
   position: fixed;
   top: 80px;
   left: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #333;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   padding: 16px;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   max-width: 300px;
   max-height: 400px;
   overflow-y: auto;
+  color: white;
 }
 
 .dev-menu-header {
@@ -120,6 +151,7 @@ body {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
+  color: white;
 }
 
 .dev-menu-header button {
@@ -129,10 +161,11 @@ body {
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
+  color: white;
 }
 
 .dev-menu-header button:hover {
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .dev-menu-content {
@@ -145,7 +178,7 @@ body {
   margin: 0 0 8px 0;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -158,18 +191,19 @@ body {
 
 .dev-buttons button {
   padding: 6px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
-  background: white;
+  background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   font-size: 11px;
   font-weight: 500;
+  color: white;
   /* Removed transition for fundamental simplicity */
 }
 
 .dev-buttons button:hover:not(:disabled) {
-  background: #f0f0f0;
-  border-color: #999;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .dev-buttons button:disabled {
@@ -179,7 +213,7 @@ body {
 
 .debug-info {
   font-size: 11px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .debug-stats {
@@ -191,34 +225,37 @@ body {
 
 .debug-stats span {
   padding: 2px 6px;
-  background: #f8f9fa;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   font-family: monospace;
+  color: white;
 }
 
 .debug-action {
   padding: 6px 8px;
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   font-family: monospace;
   font-size: 10px;
+  color: white;
 }
 
-/* Burger Menu Button */
+/* Burger Menu Button - Blends with canvas */
 .burger-menu {
   background: none;
-  border: 1px solid #333;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   padding: 6px 10px;
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
+  color: white;
   /* Removed transition for fundamental simplicity */
 }
 
 .burger-menu:hover {
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 0.1);
   transform: scale(1.05);
 }
 

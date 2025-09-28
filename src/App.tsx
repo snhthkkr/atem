@@ -610,12 +610,14 @@ function App() {
           top: '60px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: 'white',
-          border: '2px solid black',
+          background: 'rgba(0, 0, 0, 0.9)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
           borderRadius: '8px',
           padding: '10px',
           zIndex: 1001,
           minWidth: '300px',
+          color: 'white',
+          backdropFilter: 'blur(10px)'
         }}>
           <input
             type="text"
@@ -625,9 +627,11 @@ function App() {
             style={{
               width: '100%',
               padding: '8px',
-              border: '1px solid #ccc',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '4px',
               fontSize: '14px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: 'white'
             }}
             autoFocus
           />
@@ -674,9 +678,11 @@ function App() {
           const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
           const angle = Math.atan2(endY - startY, endX - startX);
           
-          // Monochrome lines in connect mode
-          const lineColor = currentMode === 'connect' ? '#000000' : '#ffffff';
-          const shadowColor = currentMode === 'connect' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+          // No lines in connect mode for true monochrome simplicity
+          if (currentMode === 'connect') return null;
+          
+          const lineColor = '#ffffff';
+          const shadowColor = 'rgba(0, 0, 0, 0.5)';
           
           return (
             <div
