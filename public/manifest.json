@@ -1,0 +1,10 @@
+{
+  "name": "Atem - Thought Connector",
+  "short_name": "Atem",
+  "description": "Connect your thoughts visually",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary"
+}
