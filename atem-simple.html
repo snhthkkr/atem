@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Atem - Your Thought Space</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+            color: #2c2c2c;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            touch-action: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(24px);
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .night-mode-btn {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .night-mode-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .writing-area {
+            flex: 1;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .textarea {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 22px;
+            line-height: 1.8;
+            font-family: inherit;
+            background: transparent;
+            color: #2c2c2c;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            resize: none;
+        }
+
+        .textarea::placeholder {
+            color: #999;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #007AFF;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: #0056CC;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: #333;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Night Mode */
+        body.night-mode {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #e8e8e8;
+        }
+
+        body.night-mode .header {
+            background: rgba(15, 15, 15, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.night-mode .logo {
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        body.night-mode .night-mode-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        body.night-mode .night-mode-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        body.night-mode .textarea {
+            color: #e8e8e8;
+        }
+
+        body.night-mode .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        body.night-mode .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        body.night-mode .status {
+            color: #999;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">✨ Atem</div>
+            <button class="night-mode-btn" onclick="toggleNightMode()">🌙</button>
+        </div>
+        
+        <div class="writing-area">
+            <textarea 
+                class="textarea" 
+                placeholder="✨ What's on your mind?"
+                id="noteText"
+                oninput="autoSave()"
+                onfocus="showStatus('Writing...')"
+                onblur="hideStatus()"
+            ></textarea>
+            
+            <div class="controls">
+                <div class="status" id="status"></div>
+                <div>
+                    <button class="btn btn-secondary" onclick="clearNote()">🗑️ Clear</button>
+                    <button class="btn btn-primary" onclick="saveNote()" id="saveBtn">💾 Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentNote = '';
+        let nightMode = localStorage.getItem('atem-night-mode') === 'true';
+        let autoSaveTimeout = null;
+        let isSaving = false;
+
+        // Initialize
+        function init() {
+            if (nightMode) {
+                document.body.classList.add('night-mode');
+                document.querySelector('.night-mode-btn').textContent = '☀️';
+            }
+            
+            // Load saved note
+            const savedNote = localStorage.getItem('atem-current-note');
+            if (savedNote) {
+                document.getElementById('noteText').value = savedNote;
+                currentNote = savedNote;
+            }
+            
+            showStatus('Ready to write');
+        }
+
+        // Night mode toggle
+        function toggleNightMode() {
+            nightMode = !nightMode;
+            document.body.classList.toggle('night-mode', nightMode);
+            document.querySelector('.night-mode-btn').textContent = nightMode ? '☀️' : '🌙';
+            localStorage.setItem('atem-night-mode', nightMode.toString());
+        }
+
+        // Auto-save
+        function autoSave() {
+            currentNote = document.getElementById('noteText').value;
+            localStorage.setItem('atem-current-note', currentNote);
+            
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+            }
+            
+            autoSaveTimeout = setTimeout(() => {
+                showStatus('Auto-saved');
+                setTimeout(() => hideStatus(), 2000);
+            }, 1000);
+        }
+
+        // Save note
+        function saveNote() {
+            if (isSaving) return;
+            
+            currentNote = document.getElementById('noteText').value.trim();
+            if (!currentNote) {
+                showStatus('Please write something first!');
+                setTimeout(() => hideStatus(), 3000);
+                return;
+            }
+            
+            isSaving = true;
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.textContent = '⏳ Saving...';
+            saveBtn.disabled = true;
+            
+            // Create note object
+            const note = {
+                id: Date.now().toString(),
+                text: currentNote,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Save to localStorage
+            const savedNotes = JSON.parse(localStorage.getItem('atem-notes') || '[]');
+            savedNotes.push(note);
+            localStorage.setItem('atem-notes', JSON.stringify(savedNotes));
+            
+            // Clear current note
+            document.getElementById('noteText').value = '';
+            currentNote = '';
+            localStorage.removeItem('atem-current-note');
+            
+            // Reset button
+            setTimeout(() => {
+                saveBtn.textContent = '💾 Save';
+                saveBtn.disabled = false;
+                isSaving = false;
+                showStatus('Note saved! ✨');
+                setTimeout(() => hideStatus(), 3000);
+            }, 800);
+        }
+
+        // Clear note
+        function clearNote() {
+            if (confirm('Clear this note?')) {
+                document.getElementById('noteText').value = '';
+                currentNote = '';
+                localStorage.removeItem('atem-current-note');
+                showStatus('Note cleared');
+                setTimeout(() => hideStatus(), 2000);
+            }
+        }
+
+        // Status functions
+        function showStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function hideStatus() {
+            document.getElementById('status').textContent = '';
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Prevent pull-to-refresh
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
