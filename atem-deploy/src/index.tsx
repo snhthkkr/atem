@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import AppBulletproof from "./AppBulletproof";
+import App from "./AppBulletproof";
 import "./styles.css";
 
 const root = ReactDOM.createRoot(
@@ -8,6 +8,6 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <AppBulletproof />
+    <App />
   </React.StrictMode>
 );
